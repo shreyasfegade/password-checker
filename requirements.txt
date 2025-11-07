@@ -1,0 +1,4 @@
+﻿streamlit
+zxcvbn-python
+argon2-cffi
+pandas
