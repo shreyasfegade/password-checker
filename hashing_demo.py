@@ -24,7 +24,7 @@ except Exception:
     PasswordHasher = None
     ARGON2_AVAILABLE = False
 
-# Simple wrappers to show example hashed outputs (do not store real passwords)
+#simple wrappers to show example hashed outputs 
 def hash_md5(password: str) -> str:
     return hashlib.md5(password.encode("utf-8")).hexdigest()
 
@@ -39,21 +39,20 @@ def hash_bcrypt(password: str, rounds: int = 12) -> str:
     return out.decode()
 
 def hash_argon2(password: str, time_cost: int = 2, memory_cost_kb: int = 102400) -> str:
-    # memory_cost_kb default ~100MB (102400 KB) — adjust for demo
+    # memory_cost_kb default ~100MB (102400 KB)
     if not ARGON2_AVAILABLE:
         raise RuntimeError("argon2 not available in this environment.")
-    ph = PasswordHasher(time_cost=time_cost, memory_cost=memory_cost_kb // 1024)  # Note: argon2-cffi PasswordHasher expects memory_cost in MB
+    ph = PasswordHasher(time_cost=time_cost, memory_cost=memory_cost_kb // 1024)  # argon2-cffi PasswordHasher expects memory_cost in MB
     return ph.hash(password)
 
-# Conservative example attacker speeds (guesses per second) for **offline** attacks
-# These are illustrative ranges (order of magnitude). Label them clearly in UI.
+#example attacker speeds (guesses per second) for **offline** attacks
 OFFLINE_HASH_SPECS = {
     "Raw fast hash (MD5/SHA1) - single GPU": {
-        "speed": 1e9,   # 1 billion guesses/sec (optimistic for single GPU on raw fast hash)
+        "speed": 1e9,   
         "note": "Raw fast hashes on high-end GPU"
     },
     "Raw fast hash (MD5/SHA1) - multi GPU cluster": {
-        "speed": 1e13,  # 10 trillion guesses/sec (large cluster)
+        "speed": 1e13,  
         "note": "Large GPU cluster for raw fast hashes"
     },
     "SHA256 (fast) - single GPU": {
@@ -61,7 +60,7 @@ OFFLINE_HASH_SPECS = {
         "note": "SHA256 optimized on GPU"
     },
     "bcrypt (cost=12) - single CPU core": {
-        "speed": 200,   # ~200 verifications/sec (example)
+        "speed": 200,   
         "note": "bcrypt is intentionally slow; CPU-bound"
     },
     "bcrypt (cost=12) - large botnet": {
@@ -78,7 +77,7 @@ OFFLINE_HASH_SPECS = {
     }
 }
 
-# Utility: return an approx guesses/sec for chosen storage hash type and params.
+# return an approx guesses/sec for chosen storage hash type and params.
 def get_hash_speed(algorithm_key: str, bcrypt_rounds: int = 12, argon2_time_cost: int = 2, argon2_mem_kb: int = 102400) -> float:
     """
     Return guesses/sec for the chosen 'algorithm_key' string (one of the keys in OFFLINE_HASH_SPECS).
@@ -95,7 +94,7 @@ def get_hash_speed(algorithm_key: str, bcrypt_rounds: int = 12, argon2_time_cost
         base = 1e8
     # adjust for bcrypt rounds (higher rounds -> slower)
     if "bcrypt" in algorithm_key.lower():
-        # crude approximation: every increase of 1 round halves speed (approx)
+        # every increase of 1 round halves speed (approx)
         rounds_diff = bcrypt_rounds - 12
         adjust = 2 ** (-rounds_diff)
         return max(1.0, base * adjust)
@@ -105,7 +104,7 @@ def get_hash_speed(algorithm_key: str, bcrypt_rounds: int = 12, argon2_time_cost
         return max(0.1, base * adjust)
     return base
 
-# small helper: human friendly formatting reused by UI if needed
+
 def format_seconds(seconds: float) -> str:
     if seconds == float("inf") or seconds != seconds:
         return "infinite / unknown"
