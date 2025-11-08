@@ -1,7 +1,3 @@
-# app.py — Fixed & improved: polished Streamlit app with aircrack-style visual and enhanced HTML report
-# Requires: strength.py and hashing_demo.py in the same folder.
-# Note: PDF generation removed per user request; only HTML report provided.
-
 import streamlit as st
 from strength import analyze_charset, entropy_bits, estimate_charset_size
 from zxcvbn import zxcvbn
@@ -15,7 +11,7 @@ from string import Template
 
 st.set_page_config(page_title="Password Checker — Polished Demo", layout="wide")
 
-# ---------- Inline CSS for polish ----------
+#Inline CSS for polish
 st.markdown(
     """
     <style>
@@ -59,7 +55,7 @@ st.markdown(
 st.markdown('<div class="fancy-header">🔐 Password Strength Checker — Polished Demo</div>', unsafe_allow_html=True)
 st.write("**Warning:** Do not enter real production passwords. Use demo/test passwords only.")
 
-# ---------- Helper: aircrack-ng style visual (embeddable) ----------
+# cracking simulation animations
 def render_crack_animation(target_guesses=10_000_000, visual_speed=1e6, title="Simulated cracking (visual)"):
     """
     Renders an aircrack-ng-like visual animation inside Streamlit.
@@ -149,12 +145,12 @@ def render_crack_animation(target_guesses=10_000_000, visual_speed=1e6, title="S
     }})();
     </script>
     """)
-    # substitute placeholders (TITLE, TARGET, SPEED). Pools have $$ for literal $.
+    # substitute placeholders (TITLE, TARGET, SPEED)
     filled = tpl.substitute(TITLE=html.escape(str(title)), TARGET=int(target_guesses), SPEED=float(visual_speed))
     components.html(filled, height=380, scrolling=True)
 
 
-# ---------- Enhanced HTML report (no PDF) ----------
+# HTML report
 def make_html_report(password_display, counts, ent_bits, zx, scenario_rows, notes=None):
     """Return an HTML string containing a styled, layman-friendly, detailed report."""
     now = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
@@ -165,7 +161,7 @@ def make_html_report(password_display, counts, ent_bits, zx, scenario_rows, note
     zscore = zx.get("score") if zx else "n/a"
     zguesses = f"{zx.get('guesses'):,}" if zx and zx.get("guesses") else "n/a"
 
-    # friendly suggestions
+    # suggestions in report
     suggestions_html = ""
     if zx:
         f = zx.get("feedback", {})
@@ -177,7 +173,7 @@ def make_html_report(password_display, counts, ent_bits, zx, scenario_rows, note
                 suggestions_html += f"<li>{html.escape(s)}</li>"
             suggestions_html += "</ul>"
 
-    # Add a simple recommended passphrase generator example (text only)
+    # reccomend passphrase
     passphrase_example = "e.g. 'planet correct mango bicycle' — four random words is a strong passphrase."
 
     notes_html = f"<p>{html.escape(notes)}</p>" if notes else ""
@@ -267,7 +263,7 @@ def make_html_report(password_display, counts, ent_bits, zx, scenario_rows, note
     return html_report
 
 
-# ---------- UI layout ----------
+# UI
 left, right = st.columns([1, 2])
 
 with left:
@@ -308,10 +304,10 @@ with right:
     st.header("Analysis")
     if not pw:
         st.info("Type a password on the left to analyze. Demo examples: `password123`, `Tr0ub4dor&3`, `correct horse battery staple`, random 16-char string.")
-        rows = []  # ensure defined
+        rows = []  
         zx = None
     else:
-        # A: Naive entropy & charset
+        # naive entropy and analyze inputed password
         counts = analyze_charset(pw)
         S = estimate_charset_size(counts)
         ent_bits = entropy_bits(pw)
@@ -325,7 +321,7 @@ with right:
         st.write(f"**Classes:** lower={counts['has_lower']} upper={counts['has_upper']} digits={counts['has_digit']} symbols={counts['has_symbol']} space={counts['has_space']}")
         st.markdown("</div>", unsafe_allow_html=True)
 
-        # B: zxcvbn analysis
+        # zxcvbn analysis
         st.subheader("Pattern-aware analysis (zxcvbn)")
         try:
             zx = zxcvbn(pw)
@@ -356,7 +352,7 @@ with right:
             st.write("zxcvbn unavailable — only naive entropy shown.")
             guesses = None
 
-        # C: Build scenario list
+        # Scenario simulation
         scenarios = []
         scenarios.append(("Online (throttled)", float(online_speed)))
         for k in selected_presets:
@@ -374,7 +370,7 @@ with right:
         elif hash_choice == "SHA256 (fast)":
             scenarios.append(("Offline (SHA256 - single GPU)", hd.get_hash_speed("SHA256 (fast) - single GPU")))
 
-        # D: Crack time table
+        # table for crack time
         rows = []
         for (label, speed) in scenarios:
             log10_naive_guesses = ent_bits * math.log10(2)
@@ -391,7 +387,7 @@ with right:
         st.subheader("Crack time comparison (human-friendly)")
         st.table(df)
 
-        # E: Visual log10 chart
+        # log 10 times chart
         st.subheader("Visual: log10(seconds) (smaller -> easier for attacker)")
         chart_data = []
         for (label, speed) in scenarios:
@@ -403,7 +399,7 @@ with right:
         chart_df = pd.DataFrame(chart_data).set_index("scenario").fillna(float("nan"))
         st.bar_chart(chart_df)
 
-        # F: Hash demo outputs
+        # hash demo
         st.subheader("Hash demo (example outputs)")
         try:
             st.text("MD5: " + hd.hash_md5(pw))
@@ -427,7 +423,7 @@ with right:
         except Exception as e:
             st.write("Hash demo error:", e)
 
-        # G: Simulate cracking (visual)
+        # simulate cracking
         if simulate:
             st.subheader("Simulation (aircrack-ng style visual)")
             sim_label, sim_speed = scenarios[0] if scenarios else ("Online (throttled)", float(online_speed))
@@ -444,12 +440,11 @@ with right:
             render_crack_animation(target_guesses=sim_total_guesses, visual_speed=visual_speed, title=f"Simulated cracking — {sim_label}")
             st.success("Simulation complete (visual). The animation compresses the real-world time to a short demonstration.")
 
-        # H: Report export (fancy HTML only)
+        # report export
         if download_report:
             html_report = make_html_report(pw, counts, ent_bits, zx if 'zx' in locals() else None, rows,
                                            notes="Generated by local demo. Do not share real passwords.")
             st.markdown("### Report preview")
             st.components.v1.html(html_report, height=420, scrolling=True)
             st.download_button("Download fancy HTML report", html_report, file_name="password_report.html", mime="text/html")
-
-# End of app.py
+            
