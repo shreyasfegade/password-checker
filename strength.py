@@ -13,12 +13,11 @@ Functions provided:
 
 import math
 
-# approximate sizes for character classes
+# approx sizes for character classes
 CLASS_SIZES = {
     "lower": 26,
     "upper": 26,
     "digits": 10,
-    # rough printable symbols count (common on keyboards)
     "symbols": 33,
     "space": 1
 }
@@ -56,7 +55,7 @@ def estimate_charset_size(counts: dict) -> int:
     if counts.get("has_space"):
         # spaces are rarely useful for entropy but count as 1
         s += CLASS_SIZES["space"]
-    # fallback: if password empty, avoid s=0
+    # if password empty, avoid s=0
     return max(s, 0)
 
 def entropy_bits(password: str) -> float:
@@ -123,19 +122,19 @@ def crack_times_for_speeds(entropy_bits: float, attacker_speeds: dict) -> dict:
     out = {}
     log10_guesses = guesses_log10_from_entropy(entropy_bits)
     for label, speed in attacker_speeds.items():
-        # handle zero or extremely small speed defensively
+        # handle zero or extremely small speed 
         if speed <= 0:
             out[label] = {"seconds": float("inf"), "human": "infinite (invalid speed)", "log10_seconds": float("inf"), "log10_guesses": log10_guesses}
             continue
         log10_speed = math.log10(speed)
         log10_seconds = log10_guesses - log10_speed
-        # convert log10_seconds to seconds if reasonable
+        # convert log10_seconds to seconds
         if log10_seconds < 300:  # 10^300 is absurd; above that keep as infinity/scientific
             seconds = 10 ** log10_seconds
             human = format_seconds(seconds)
         else:
             seconds = float("inf")
-            # represent astronomically large time using years in scientific notation
+            # represent large time using years
             human = ">10^300 seconds (astronomical)"
         out[label] = {
             "seconds": seconds,
